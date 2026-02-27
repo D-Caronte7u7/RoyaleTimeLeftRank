@@ -1,26 +1,38 @@
 package org.caronte.managers;
 
 import org.bukkit.ChatColor;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.caronte.Main;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class MessageManager {
 
     private final Main plugin;
-    private FileConfiguration config;
 
     public MessageManager(Main plugin) {
         this.plugin = plugin;
-        reload();
+    }
+
+    public String getMessage(String path) {
+        String message = plugin.getConfig().getString(path);
+
+        if (message == null) {
+            return "";
+        }
+
+        return ChatColor.translateAlternateColorCodes('&', message);
+    }
+
+    public List<String> getStringList(String path) {
+        List<String> list = plugin.getConfig().getStringList(path);
+
+        return list.stream()
+                .map(line -> ChatColor.translateAlternateColorCodes('&', line))
+                .collect(Collectors.toList());
     }
 
     public void reload() {
         plugin.reloadConfig();
-        this.config = plugin.getConfig();
-    }
-
-    public String get(String path) {
-        String message = config.getString("messages." + path, "");
-        return ChatColor.translateAlternateColorCodes('&', message);
     }
 }

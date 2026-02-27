@@ -1,117 +1,144 @@
 package org.caronte.commands;
 
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
+import org.bukkit.ChatColor;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
 import org.caronte.Main;
 import org.caronte.managers.MessageManager;
 import org.caronte.services.TimeRankService;
-import org.caronte.utils.TimeFormatter;
+import org.caronte.services.TimeRankService.RankData;
+import org.caronte.utils.CenteredMessageUtil;
 
-import java.util.Optional;
-import java.util.UUID;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class TimeRankCommand implements CommandExecutor {
 
     private final TimeRankService service;
-    private final MessageManager messages;
+    private final MessageManager messageManager;
 
-    public TimeRankCommand(TimeRankService service, MessageManager messages) {
+    public TimeRankCommand(TimeRankService service, MessageManager messageManager) {
         this.service = service;
-        this.messages = messages;
+        this.messageManager = messageManager;
     }
 
     @Override
-    public boolean onCommand(@NotNull CommandSender sender,
-                             @NotNull Command command,
-                             @NotNull String label,
-                             @NotNull String[] args) {
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
-        // ===============================
-        // RELOAD
-        // ===============================
-
+        // Reload
         if (args.length == 1 && args[0].equalsIgnoreCase("reload")) {
 
             if (!sender.hasPermission("royaletimeleftrank.reload")) {
-                sender.sendMessage(messages.get("no-permission"));
+                sender.sendMessage(messageManager.getMessage("messages.no-permission"));
                 return true;
             }
 
-            messages.reload();
-            sender.sendMessage(messages.get("reload-success"));
+            messageManager.reload();
+            sender.sendMessage(messageManager.getMessage("messages.reload-success"));
             return true;
         }
 
-        // ===============================
-        // VALIDACIÓN CONSOLA
-        // ===============================
+        Player target;
 
-        if (!(sender instanceof Player) && args.length == 0) {
-            sender.sendMessage(messages.get("console-specify"));
-            return true;
-        }
-
-        OfflinePlayer target;
-
-        if (args.length >= 1) {
+        // Consultar otro jugador
+        if (args.length == 1) {
 
             if (!sender.hasPermission("royaletimeleftrank.others")) {
-                sender.sendMessage(messages.get("no-permission"));
+                sender.sendMessage(messageManager.getMessage("messages.no-permission"));
                 return true;
             }
 
-            target = Bukkit.getOfflinePlayer(args[0]);
+            target = Bukkit.getPlayer(args[0]);
 
-            if (target == null || target.getUniqueId() == null) {
-                sender.sendMessage(messages.get("player-not-found"));
+            if (target == null) {
+                sender.sendMessage(messageManager.getMessage("messages.player-not-found"));
                 return true;
             }
 
         } else {
+
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(messageManager.getMessage("messages.console-specify"));
+                return true;
+            }
+
             target = (Player) sender;
         }
 
-        UUID uuid = target.getUniqueId();
+        Player finalTarget = target;
 
-        service.getRemainingTime(uuid).thenAccept(result -> {
+        service.getRemainingRanks(target.getUniqueId()).thenAccept(ranks -> {
 
-            if (result.isEmpty()) {
-                sender.sendMessage(messages.get("no-temp-rank"));
-                return;
-            }
+            Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
 
-            TimeRankService.RankData data = result.get();
-
-            long remaining = data.getRemaining();
-
-            long days = TimeFormatter.getDays(remaining);
-            long hours = TimeFormatter.getHours(remaining);
-            long minutes = TimeFormatter.getMinutes(remaining);
-
-            for (String line : Main.getInstance().getConfig().getStringList("time-left-message")) {
-
-                String formatted = line
-                        .replace("%player%", target.getName())
-                        .replace("%rank%", data.getRankName())
-                        .replace("%prefix%", data.getPrefix())
-                        .replace("%days%", String.valueOf(days))
-                        .replace("%hours%", String.valueOf(hours))
-                        .replace("%minutes%", String.valueOf(minutes));
-
-                if (formatted.startsWith("<center>")) {
-                    formatted = formatted.replace("<center>", "");
-                    formatted = org.caronte.utils.CenteredMessageUtil.centered(formatted);
-                } else {
-                    formatted = org.bukkit.ChatColor.translateAlternateColorCodes('&', formatted);
+                if (ranks.isEmpty()) {
+                    sender.sendMessage(messageManager.getMessage("messages.no-temp-rank"));
+                    return;
                 }
 
-                sender.sendMessage(formatted);
-            }
+                // =========================
+                // HEADER
+                // =========================
+                for (String line : messageManager.getStringList("header")) {
+                    sendFormattedLine(sender, line, finalTarget.getName(), null);
+                }
+
+                // =========================
+                // RANKS DINÁMICOS
+                // =========================
+                String format = messageManager.getMessage("rank-format");
+
+                for (RankData rank : ranks) {
+
+                    long millis = rank.getRemaining();
+
+                    long days = TimeUnit.MILLISECONDS.toDays(millis);
+                    long hours = TimeUnit.MILLISECONDS.toHours(millis) % 24;
+                    long minutes = TimeUnit.MILLISECONDS.toMinutes(millis) % 60;
+
+                    String line = format
+                            .replace("%player%", finalTarget.getName())
+                            .replace("%rank%", rank.getRankName())
+                            .replace("%prefix%", rank.getPrefix() == null ? "" : rank.getPrefix())
+                            .replace("%days%", String.valueOf(days))
+                            .replace("%hours%", String.valueOf(hours))
+                            .replace("%minutes%", String.valueOf(minutes));
+
+                    sendFormattedLine(sender, line, finalTarget.getName(), rank);
+                }
+
+                // =========================
+                // FOOTER
+                // =========================
+                for (String line : messageManager.getStringList("footer")) {
+                    sendFormattedLine(sender, line, finalTarget.getName(), null);
+                }
+
+            });
+
         });
 
         return true;
+    }
+
+    private void sendFormattedLine(CommandSender sender, String line, String playerName, RankData rank) {
+
+        boolean centered = false;
+
+        if (line.startsWith("<center>")) {
+            centered = true;
+            line = line.replace("<center>", "");
+        }
+
+        line = line.replace("%player%", playerName);
+
+        line = ChatColor.translateAlternateColorCodes('&', line);
+
+        if (centered) {
+            line = CenteredMessageUtil.centered(line);
+        }
+
+        sender.sendMessage(line);
     }
 }

@@ -18,14 +18,21 @@
 messages:
   no-permission: "&cNo tienes permiso para hacer esto."
   player-not-found: "&cJugador no encontrado."
-  no-temp-rank: "&eEl jugador no tiene rango temporal activo."
+  no-temp-rank: "&eEl jugador no tiene rangos temporales activos."
   console-specify: "&cDebes especificar un jugador."
   loading-error: "&cError cargando datos del jugador."
   reload-success: "&aConfiguración recargada correctamente."
 
-time-left-message:
-  - "&7&m----------------------------------"
-  - "<center>&eJugador: &f%player%"
-  - "<center>&eRango: %prefix% &7(%rank%)"
-  - "<center>&eTiempo restante: &f%days%d %hours%h %minutes%m"
-  - "&7&m----------------------------------"
+header:
+  - "&7 "
+  - "<center>&6&lTIEMPO RESTANTE DE RANGOS"
+  - "<center>&8ɪɴꜰᴏʀᴍᴀᴄɪóɴ"
+  - "&7 "
+  - "<center>&7✦ &fJugador: &e%player%"
+  - "&7 "
+
+rank-format: "<center>&7• %prefix% &8→ &a%days%d %hours%h %minutes%m"
+
+footer:
+  - "&7 "
+  - "<center>&7&m------------------------------------"

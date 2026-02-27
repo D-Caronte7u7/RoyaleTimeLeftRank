@@ -1,126 +1,57 @@
 package org.caronte.services;
 
 import net.luckperms.api.LuckPerms;
-import net.luckperms.api.cacheddata.CachedMetaData;
 import net.luckperms.api.model.group.Group;
 import net.luckperms.api.model.user.User;
-import net.luckperms.api.node.NodeType;
 import net.luckperms.api.node.types.InheritanceNode;
-import net.luckperms.api.query.QueryOptions;
 
 import java.util.Comparator;
-import java.util.Map;
-import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public class TimeRankService {
 
     private final LuckPerms luckPerms;
 
-    // ===============================
-    // CACHE SYSTEM
-    // ===============================
-
-    private final Map<UUID, RankData> cache = new ConcurrentHashMap<>();
-    private final Map<UUID, Long> cacheExpiry = new ConcurrentHashMap<>();
-
-    private static final long CACHE_DURATION = 15_000; // 15 segundos
-
     public TimeRankService(LuckPerms luckPerms) {
         this.luckPerms = luckPerms;
     }
 
-    public CompletableFuture<Optional<RankData>> getRemainingTime(UUID uuid) {
+    public CompletableFuture<List<RankData>> getRemainingRanks(UUID uuid) {
 
-        long now = System.currentTimeMillis();
+        return luckPerms.getUserManager().loadUser(uuid).thenApply(user -> {
 
-        // ===============================
-        // 1️⃣ Verificar cache primero
-        // ===============================
+            if (user == null) return List.of();
 
-        if (cache.containsKey(uuid) && cacheExpiry.getOrDefault(uuid, 0L) > now) {
-            return CompletableFuture.completedFuture(
-                    Optional.of(cache.get(uuid))
-            );
-        }
+            long now = System.currentTimeMillis();
 
-        // ===============================
-        // 2️⃣ Intentar obtener usuario desde memoria
-        // ===============================
+            return user.getNodes().stream()
+                    .filter(node -> node instanceof InheritanceNode)
+                    .map(node -> (InheritanceNode) node)
+                    .filter(InheritanceNode::hasExpiry)
+                    .filter(node -> node.getExpiry().toEpochMilli() > now)
+                    .sorted(Comparator.comparing(node -> node.getExpiry().toEpochMilli()))
+                    .map(node -> {
 
-        User user = luckPerms.getUserManager().getUser(uuid);
+                        long expiry = node.getExpiry().toEpochMilli();
+                        long remaining = expiry - now;
+                        String groupName = node.getGroupName();
 
-        if (user != null) {
-            return CompletableFuture.completedFuture(
-                    processUser(user, now, uuid)
-            );
-        }
+                        Group group = luckPerms.getGroupManager().getGroup(groupName);
 
-        // ===============================
-        // 3️⃣ Si no está en memoria, cargar async
-        // ===============================
+                        String prefix = "";
+                        if (group != null && group.getCachedData() != null) {
+                            prefix = group.getCachedData().getMetaData().getPrefix();
+                            if (prefix == null) prefix = "";
+                        }
 
-        return luckPerms.getUserManager().loadUser(uuid)
-                .thenApply(loadedUser -> processUser(loadedUser, now, uuid));
+                        return new RankData(groupName, prefix, remaining);
+                    })
+                    .collect(Collectors.toList());
+        });
     }
-
-    private Optional<RankData> processUser(User user, long now, UUID uuid) {
-
-        if (user == null) return Optional.empty();
-
-        // Buscar el rango temporal con mayor duración restante
-        Optional<InheritanceNode> bestTempNode = user.getNodes(NodeType.INHERITANCE).stream()
-                .filter(InheritanceNode::hasExpiry)
-                .filter(node -> node.getExpiry().toEpochMilli() > now)
-                .max(Comparator.comparingLong(node ->
-                        node.getExpiry().toEpochMilli()
-                ));
-
-        if (bestTempNode.isEmpty()) {
-            return Optional.empty();
-        }
-
-        InheritanceNode node = bestTempNode.get();
-
-        long expiry = node.getExpiry().toEpochMilli();
-        long remaining = expiry - now;
-
-        String groupName = node.getGroupName();
-        Group group = luckPerms.getGroupManager().getGroup(groupName);
-
-        String prefix = "";
-
-        if (group != null) {
-
-            QueryOptions queryOptions = luckPerms.getContextManager()
-                    .getQueryOptions(user)
-                    .orElse(QueryOptions.defaultContextualOptions());
-
-            CachedMetaData metaData = group.getCachedData().getMetaData(queryOptions);
-
-            String groupPrefix = metaData.getPrefix();
-            if (groupPrefix != null) {
-                prefix = groupPrefix;
-            }
-        }
-
-        RankData data = new RankData(groupName, prefix, remaining);
-
-        // ===============================
-        // Guardar en cache
-        // ===============================
-
-        cache.put(uuid, data);
-        cacheExpiry.put(uuid, now + CACHE_DURATION);
-
-        return Optional.of(data);
-    }
-
-    // ===============================
-    // Clase de datos
-    // ===============================
 
     public static class RankData {
 
