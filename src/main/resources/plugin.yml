@@ -1,0 +1,19 @@
+name: RoyaleTimeLeftRank
+version: 1.0
+main: org.caronte.Main
+api-version: 1.20
+depend: [LuckPerms]
+
+commands:
+  timerank:
+    description: Ver tiempo restante de rango
+    usage: /timerank [jugador]
+
+permissions:
+  royaletimeleftrank.others:
+    description: Permite consultar el tiempo de otros jugadores
+    default: op
+
+  royaletimeleftrank.reload:
+    description: Permite recargar el plugin
+    default: op

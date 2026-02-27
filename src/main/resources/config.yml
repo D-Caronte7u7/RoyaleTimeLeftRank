@@ -1,0 +1,31 @@
+# ============================================================
+# RoyaleTimeLeftRank - Configuración
+#
+# Placeholders disponibles:
+# %player%
+# %rank%
+# %prefix%
+# %days%
+# %hours%
+# %minutes%
+#
+# Para centrar una línea agrega:
+# <center>
+# Ejemplo:
+# - "<center>&6Mensaje centrado"
+# ============================================================
+
+messages:
+  no-permission: "&cNo tienes permiso para hacer esto."
+  player-not-found: "&cJugador no encontrado."
+  no-temp-rank: "&eEl jugador no tiene rango temporal activo."
+  console-specify: "&cDebes especificar un jugador."
+  loading-error: "&cError cargando datos del jugador."
+  reload-success: "&aConfiguración recargada correctamente."
+
+time-left-message:
+  - "&7&m----------------------------------"
+  - "<center>&eJugador: &f%player%"
+  - "<center>&eRango: %prefix% &7(%rank%)"
+  - "<center>&eTiempo restante: &f%days%d %hours%h %minutes%m"
+  - "&7&m----------------------------------"

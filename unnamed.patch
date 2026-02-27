@@ -1,0 +1,21 @@
+Index: src/main/resources/plugin.yml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/resources/plugin.yml b/src/main/resources/plugin.yml
+--- a/src/main/resources/plugin.yml
++++ b/src/main/resources/plugin.yml	(date 1772213334649)
+@@ -7,4 +7,9 @@
+ commands:
+   timerank:
+     description: Muestra el tiempo restante de tu rango
+-    usage: /timerank
+\ No newline at end of file
++    usage: /timerank
++
++permissions:
++  royaletimeleftrank.others:
++    description: Permite consultar el tiempo de rango de otros jugadores
++    default: op
+\ No newline at end of file
