@@ -1,7 +1,7 @@
 package org.caronte.managers;
 
-import org.bukkit.ChatColor;
 import org.caronte.Main;
+import org.caronte.utils.ColorUtil;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,14 +21,14 @@ public class MessageManager {
             return "";
         }
 
-        return ChatColor.translateAlternateColorCodes('&', message);
+        return ColorUtil.color(message);
     }
 
     public List<String> getStringList(String path) {
         List<String> list = plugin.getConfig().getStringList(path);
 
         return list.stream()
-                .map(line -> ChatColor.translateAlternateColorCodes('&', line))
+                .map(ColorUtil::color)
                 .collect(Collectors.toList());
     }
 
