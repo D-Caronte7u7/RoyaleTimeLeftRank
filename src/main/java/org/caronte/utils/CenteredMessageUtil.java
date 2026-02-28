@@ -6,19 +6,22 @@ public class CenteredMessageUtil {
 
     private static final int CENTER_PX = 154;
 
-    public static String centered(String message) {
+    public static String centerMessage(String message) {
 
         if (message == null || message.isEmpty())
             return "";
-
-        message = ChatColor.translateAlternateColorCodes('&', message);
 
         int messagePxSize = 0;
         boolean previousCode = false;
         boolean isBold = false;
 
-        for (char c : message.toCharArray()) {
+        char[] chars = message.toCharArray();
 
+        for (int i = 0; i < chars.length; i++) {
+
+            char c = chars[i];
+
+            // Detecta código de color
             if (c == ChatColor.COLOR_CHAR) {
                 previousCode = true;
                 continue;
@@ -26,12 +29,24 @@ public class CenteredMessageUtil {
 
             if (previousCode) {
                 previousCode = false;
+
+                // Detectar HEX moderno (§x§R§R§G§G§B§B)
+                if (c == 'x' || c == 'X') {
+                    // Saltar los siguientes 12 caracteres (§R§R§G§G§B§B)
+                    i += 12;
+                    continue;
+                }
+
                 isBold = (c == 'l' || c == 'L');
                 continue;
             }
 
             DefaultFontInfo dFI = DefaultFontInfo.getDefaultFontInfo(c);
-            messagePxSize += isBold ? dFI.getBoldLength() : dFI.getLength();
+
+            messagePxSize += isBold
+                    ? dFI.getBoldLength()
+                    : dFI.getLength();
+
             messagePxSize++;
         }
 

@@ -136,7 +136,7 @@ public class TimeRankCommand implements CommandExecutor {
         line = ChatColor.translateAlternateColorCodes('&', line);
 
         if (centered) {
-            line = CenteredMessageUtil.centered(line);
+            line = CenteredMessageUtil.centerMessage(line);
         }
 
         sender.sendMessage(line);

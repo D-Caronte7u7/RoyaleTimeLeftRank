@@ -24,15 +24,26 @@ messages:
   reload-success: "&aConfiguración recargada correctamente."
 
 header:
-  - "&7 "
+  - ""
   - "<center>&6&lTIEMPO RESTANTE DE RANGOS"
   - "<center>&8ɪɴꜰᴏʀᴍᴀᴄɪóɴ"
-  - "&7 "
+  - ""
   - "<center>&7✦ &fJugador: &e%player%"
-  - "&7 "
+  - "<center>&7☄ &fTiempo restante:"
 
-rank-format: "<center>&7• %prefix% &8→ &a%days%d %hours%h %minutes%m"
+rank-format: "<center>&7⚡ %prefix% &7→ &a%days%d %hours%h %minutes%m"
 
 footer:
-  - "&7 "
-  - "<center>&7&m------------------------------------"
+  - ""
+
+expiring-notification:
+  enabled: true
+  notify-before-days: 7
+
+  message:
+    - "<center>&#e9190f&L⚠ ADVERTENCIA ⚠"
+    - "<center>&8ɪɴꜰᴏʀᴍᴀᴄɪóɴ"
+    - ""
+    - "<center>&fTu rango %rank% &fexpira pronto!"
+    - "<center>&fTiempo restante: &a%time%"
+    - ""

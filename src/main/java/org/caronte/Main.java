@@ -4,6 +4,8 @@ import net.luckperms.api.LuckPerms;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.caronte.commands.TimeRankCommand;
+import org.caronte.listeners.ExpiringRankListener;
+import org.caronte.managers.ExpiringRankManager;
 import org.caronte.managers.MessageManager;
 import org.caronte.services.TimeRankService;
 
@@ -28,6 +30,15 @@ public class Main extends JavaPlugin {
         getCommand("timerank").setExecutor(
                 new TimeRankCommand(timeRankService, messageManager)
         );
+
+        // 👇 AQUÍ PASAMOS TODO CORRECTAMENTE
+        ExpiringRankManager expiringRankManager =
+                new ExpiringRankManager(this, luckPerms, messageManager);
+
+        getServer().getPluginManager().registerEvents(
+                new ExpiringRankListener(expiringRankManager),
+                this
+        );
     }
 
     private void setupLuckPerms() {
@@ -44,5 +55,14 @@ public class Main extends JavaPlugin {
 
     public static Main getInstance() {
         return instance;
+    }
+
+    // 👇 OPCIONAL PERO RECOMENDADO
+    public MessageManager getMessageManager() {
+        return messageManager;
+    }
+
+    public LuckPerms getLuckPerms() {
+        return luckPerms;
     }
 }
