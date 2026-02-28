@@ -77,17 +77,11 @@ public class TimeRankCommand implements CommandExecutor {
                     return;
                 }
 
-                // =========================
-                // HEADER
-                // =========================
                 for (String line : messageManager.getStringList("header")) {
                     sendFormattedLine(sender, line, finalTarget.getName(), null);
                 }
 
-                // =========================
-                // RANKS DINÁMICOS
-                // =========================
-                String format = messageManager.getMessage("rank-format");
+                String rawFormat = Main.getInstance().getConfig().getString("rank-format");
 
                 for (RankData rank : ranks) {
 
@@ -97,7 +91,7 @@ public class TimeRankCommand implements CommandExecutor {
                     long hours = TimeUnit.MILLISECONDS.toHours(millis) % 24;
                     long minutes = TimeUnit.MILLISECONDS.toMinutes(millis) % 60;
 
-                    String line = format
+                    String line = rawFormat
                             .replace("%player%", finalTarget.getName())
                             .replace("%rank%", rank.getRankName())
                             .replace("%prefix%", rank.getPrefix() == null ? "" : rank.getPrefix())
@@ -105,7 +99,9 @@ public class TimeRankCommand implements CommandExecutor {
                             .replace("%hours%", String.valueOf(hours))
                             .replace("%minutes%", String.valueOf(minutes));
 
-                    sendFormattedLine(sender, line, finalTarget.getName(), rank);
+                    line = messageManager.getMessageFromString(line);
+
+                    sender.sendMessage(line);
                 }
 
                 // =========================

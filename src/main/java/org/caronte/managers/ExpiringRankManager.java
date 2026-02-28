@@ -47,12 +47,22 @@ public class ExpiringRankManager {
             long daysLeft = secondsLeft / 86400;
 
             if (daysLeft <= notifyBeforeDays) {
-                sendNotification(player, node.getGroupName(), secondsLeft);
+
+                String groupName = node.getGroupName();
+
+                String prefix = "";
+                var group = luckPerms.getGroupManager().getGroup(groupName);
+                if (group != null && group.getCachedData() != null) {
+                    prefix = group.getCachedData().getMetaData().getPrefix();
+                    if (prefix == null) prefix = "";
+                }
+
+                sendNotification(player, groupName, prefix, secondsLeft);
             }
         }
     }
 
-    private void sendNotification(Player player, String rank, long secondsLeft) {
+    private void sendNotification(Player player, String rank, String prefix, long secondsLeft) {
 
         List<String> messages = plugin.getConfig().getStringList("expiring-notification.message");
 
@@ -62,6 +72,7 @@ public class ExpiringRankManager {
             player.sendMessage(
                     messageManager.getMessageFromString(
                             line.replace("%rank%", rank)
+                                    .replace("%prefix%", prefix)
                                     .replace("%time%", formattedTime)
                     )
             );
